@@ -85,7 +85,7 @@ export function GraphView({ path, revealed, choke, severed, selected, onSelect }
 function Node({ n, p, hot, dim, isChoke, severed, selected, onSelect }: {
   n: GNode; p: { x: number; y: number }; hot: boolean; dim: boolean; isChoke: boolean; severed: boolean; selected: boolean; onSelect: (id: string) => void;
 }) {
-  const jewel = !!n.props.crown_jewel;
+  const jewel = !!n.props["crown_jewel"];
   return (
     <g
       transform={`translate(${p.x},${p.y})`}

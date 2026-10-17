@@ -87,7 +87,7 @@ export function findAttackPath(workloadId: string): string[] {
   const jewels = [...prev.keys()]
     .map(nodeById)
     .filter((n): n is GNode => !!n && n.type === "Datastore")
-    .sort((a, b) => Number(b.props.crown_jewel ?? 0) - Number(a.props.crown_jewel ?? 0) || Number(b.props.records) - Number(a.props.records));
+    .sort((a, b) => Number(b.props["crown_jewel"] ?? 0) - Number(a.props["crown_jewel"] ?? 0) || Number(b.props["records"]) - Number(a.props["records"]));
   if (!jewels.length) return [workloadId];
   const path: string[] = [];
   let cur: string | null = jewels[0].id;
@@ -109,9 +109,9 @@ export function blastRadius(workloadId: string) {
   return {
     reachable: seen.size - 1,
     datastores: stores,
-    crownJewels: stores.filter((s) => s.props.crown_jewel).length,
-    records: stores.reduce((s, d) => s + Number(d.props.records), 0),
-    sensitiveRecords: stores.filter((s) => s.props.crown_jewel).reduce((s, d) => s + Number(d.props.records), 0),
+    crownJewels: stores.filter((s) => s.props["crown_jewel"]).length,
+    records: stores.reduce((s, d) => s + Number(d.props["records"]), 0),
+    sensitiveRecords: stores.filter((s) => s.props["crown_jewel"]).reduce((s, d) => s + Number(d.props["records"]), 0),
   };
 }
 

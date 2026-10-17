@@ -117,11 +117,11 @@ function Index() {
                   <button key={a.id} onClick={() => { setAlertId(a.id); reset(); setSelected(null); }}
                     className={cn("w-full rounded-2xl p-4 text-left transition", on ? "border border-foreground bg-card" : "bg-muted hover:bg-secondary")}>
                     <div className="flex items-center justify-between">
-                      <span className={cn("rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]", SEV[String(a.props.severity)])}>{String(a.props.severity)}</span>
+                      <span className={cn("rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]", SEV[String(a.props["severity"])])}>{String(a.props["severity"])}</span>
                       {on && <ArrowRight className="h-4 w-4" />}
                     </div>
                     <div className="mt-2.5 font-serif text-[17px] leading-snug">{a.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{a.id} · {String(a.props.detector)}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{a.id} · {String(a.props["detector"])}</div>
                   </button>
                 );
               })}
@@ -230,7 +230,7 @@ function Index() {
             </div>
             {modal === "guide" ? <Guide /> : (
               <div className="mt-5 space-y-3">
-                <p className="text-sm text-muted-foreground">Severing <b className="text-foreground">{chokeNode.name}</b> disconnects <b className="text-foreground">{target.name}</b> ({fmt(Number(target.props.records))} records) from the compromised workload.</p>
+                <p className="text-sm text-muted-foreground">Severing <b className="text-foreground">{chokeNode.name}</b> disconnects <b className="text-foreground">{target.name}</b> ({fmt(Number(target.props["records"]))} records) from the compromised workload.</p>
                 {["Isolate the workload's network egress", `Detach ${chokeNode.name} from its role`, "Rotate the reachable KMS key", "Replace wildcard grants with scoped actions"].map((s) => (
                   <div key={s} className="flex items-center gap-3 rounded-full bg-muted px-4 py-2.5 text-sm">
                     <span className="grid h-4 w-4 place-items-center rounded-full bg-foreground text-primary-foreground"><Check className="h-2.5 w-2.5" /></span>{s}
@@ -290,7 +290,7 @@ function Matrix({ path, choke }: { path: string[]; choke: string }) {
               <td className="px-4 py-3 font-medium">
                 {n.name}
                 {n.id === choke && <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-accent-foreground">Choke</span>}
-                {n.props.crown_jewel && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]">Gold</span>}
+                {n.props["crown_jewel"] && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em]">Gold</span>}
               </td>
               <td className="px-4 py-3 text-muted-foreground">{n.type}</td>
               <td className="px-4 py-3 text-right">
