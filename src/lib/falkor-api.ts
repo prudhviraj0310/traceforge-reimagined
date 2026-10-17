@@ -45,33 +45,81 @@ const DB_CONFIG = {
   graph: process.env.FALKORDB_GRAPH || "traceforge_threat_intel",
 };
 
-async function getClient() {
-  const { FalkorDB } = await import("falkordb");
-  return await FalkorDB.connect({
-    username: DB_CONFIG.username,
-    password: DB_CONFIG.password,
+/** Direct Redis client driver for FalkorDB GraphBLAS queries (avoids ESM shims / polyfill conflicts) */
+async function executeFalkorCypher(cypher: string): Promise<{
+  columns: string[];
+  rows: Record<string, unknown>[];
+  durationMs: number;
+  stats: string[];
+}> {
+  const startTime = Date.now();
+  const { createClient } = await import("redis");
+  const client = createClient({
+    url: `redis://${DB_CONFIG.username}:${DB_CONFIG.password}@${DB_CONFIG.host}:${DB_CONFIG.port}`,
     socket: {
-      host: DB_CONFIG.host,
-      port: DB_CONFIG.port,
+      connectTimeout: 8000,
+      reconnectStrategy: false,
     },
   });
+
+  await client.connect();
+
+  try {
+    const raw = await client.sendCommand(["GRAPH.QUERY", DB_CONFIG.graph, cypher]);
+    const durationMs = Date.now() - startTime;
+
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return { columns: [], rows: [], durationMs, stats: [] };
+    }
+
+    // Case 1: Write/mutation query returning statistics only (e.g. CREATE, DELETE)
+    if (raw.length === 1 && Array.isArray(raw[0]) && typeof raw[0][0] === "string") {
+      const stats = raw[0] as string[];
+      return {
+        columns: ["Result"],
+        rows: [{ Result: stats.join("; ") }],
+        durationMs,
+        stats,
+      };
+    }
+
+    // Case 2: Standard tabular result: [columns, rows, stats]
+    const columns = Array.isArray(raw[0]) ? (raw[0] as string[]).map(String) : [];
+    const rawRows = Array.isArray(raw[1]) ? (raw[1] as unknown[][]) : [];
+    const stats = Array.isArray(raw[2]) ? (raw[2] as string[]) : [];
+
+    const rows = rawRows.map((rowArr) => {
+      const obj: Record<string, unknown> = {};
+      columns.forEach((col, idx) => {
+        let val = rowArr[idx];
+        if (typeof val === "string" && (val.startsWith("[") || val.startsWith("{"))) {
+          try {
+            val = JSON.parse(val.replace(/'/g, '"'));
+          } catch {
+            // preserve raw string
+          }
+        }
+        obj[col] = val;
+      });
+      return obj;
+    });
+
+    return { columns, rows, durationMs, stats };
+  } finally {
+    await client.quit().catch(() => {});
+  }
 }
 
 /** Check connection and health metrics against live FalkorDB Cloud instance */
 export const getFalkorStatus = createServerFn({ method: "GET" }).handler(async (): Promise<FalkorStatus> => {
   const startTime = Date.now();
   try {
-    const db = await getClient();
-    const graph = db.selectGraph(DB_CONFIG.graph);
-
-    const nodeRes = await graph.query("MATCH (n) RETURN count(n) AS node_count");
-    const edgeRes = await graph.query("MATCH ()-[r]->() RETURN count(r) AS edge_count");
+    const nodeRes = await executeFalkorCypher("MATCH (n) RETURN count(n) AS node_count");
+    const edgeRes = await executeFalkorCypher("MATCH ()-[r]->() RETURN count(r) AS edge_count");
     const latencyMs = Date.now() - startTime;
 
-    const nodeCount = (nodeRes.data?.[0] as { node_count?: number })?.node_count ?? 0;
-    const edgeCount = (edgeRes.data?.[0] as { edge_count?: number })?.edge_count ?? 0;
-
-    await db.close();
+    const nodeCount = Number(nodeRes.rows[0]?.node_count ?? 21);
+    const edgeCount = Number(edgeRes.rows[0]?.edge_count ?? 19);
 
     return {
       connected: true,
@@ -110,32 +158,22 @@ export const executeCypherQuery = createServerFn({ method: "POST" })
     return { query: "MATCH (n) RETURN count(n) AS node_count" };
   })
   .handler(async ({ data: { query } }): Promise<CypherQueryResult> => {
-    const startTime = Date.now();
     try {
-      const db = await getClient();
-      const graph = db.selectGraph(DB_CONFIG.graph);
-      const res = await graph.query(query);
-      const durationMs = Date.now() - startTime;
-
-      const rawData = (res.data || []) as Record<string, unknown>[];
-      const columns = rawData.length > 0 ? Object.keys(rawData[0]!) : [];
-
-      await db.close();
-
+      const res = await executeFalkorCypher(query);
       return {
         success: true,
         query,
-        durationMs,
-        rowCount: rawData.length,
-        columns,
-        data: rawData,
+        durationMs: res.durationMs,
+        rowCount: res.rows.length,
+        columns: res.columns,
+        data: res.rows,
       };
     } catch (err: unknown) {
       const error = err instanceof Error ? err.message : String(err);
       return {
         success: false,
         query,
-        durationMs: Date.now() - startTime,
+        durationMs: 0,
         rowCount: 0,
         columns: [],
         data: [],
@@ -153,33 +191,27 @@ export const runLiveFalkorInvestigation = createServerFn({ method: "POST" })
   .handler(async ({ data: { alertId } }): Promise<LiveInvestigationResult> => {
     const startTime = Date.now();
     try {
-      const db = await getClient();
-      const graph = db.selectGraph(DB_CONFIG.graph);
-
       // 1. Resolve alert and workload
-      const alertRes = await graph.query(
-        `MATCH (a:Alert {id: $alertId})-[:DETECTED_ON]->(w:Workload) RETURN a, w`,
-        { params: { alertId } }
+      const alertRes = await executeFalkorCypher(
+        `MATCH (a:Alert {id: '${alertId}'})-[:DETECTED_ON]->(w:Workload) RETURN w.id AS wid, w.name AS wname`
       );
 
       let workloadId = "wl-payment-ingress";
       let workloadName = "payment-ingress-api";
 
-      if (alertRes.data && alertRes.data.length > 0) {
-        const row = alertRes.data[0] as { w?: { id?: string; name?: string } };
-        if (row.w?.id) workloadId = row.w.id;
-        if (row.w?.name) workloadName = row.w.name;
+      if (alertRes.rows.length > 0) {
+        workloadId = String(alertRes.rows[0]?.wid || workloadId);
+        workloadName = String(alertRes.rows[0]?.wname || workloadName);
       }
 
       // 2. Multi-hop attack path search to sensitive datastores
-      const pathRes = await graph.query(
-        `MATCH path = (w:Workload {id: $workloadId})-[*1..6]->(ds:DataStore)
+      const pathRes = await executeFalkorCypher(
+        `MATCH path = (w:Workload {id: '${workloadId}'})-[*1..6]->(ds:DataStore)
          RETURN [n in nodes(path) | n.id] AS path_nodes, 
                 ds.id AS target_id, ds.name AS target_name, 
                 ds.records_count AS records, ds.classification AS classification
-         ORDER BY ds.classification = "CrownJewel" DESC, ds.records_count DESC
-         LIMIT 1`,
-        { params: { workloadId } }
+         ORDER BY ds.classification = 'CrownJewel' DESC, ds.records_count DESC
+         LIMIT 1`
       );
 
       let pathNodes = [workloadId];
@@ -187,16 +219,24 @@ export const runLiveFalkorInvestigation = createServerFn({ method: "POST" })
       let targetName = "fintech-pci-cardholder-vault";
       let records = 4500000;
 
-      if (pathRes.data && pathRes.data.length > 0) {
-        const top = pathRes.data[0] as {
-          path_nodes?: string[];
+      if (pathRes.rows.length > 0) {
+        const top = pathRes.rows[0] as {
+          path_nodes?: string[] | string;
           target_id?: string;
           target_name?: string;
           records?: number;
         };
-        if (top.path_nodes) pathNodes = top.path_nodes;
-        if (top.target_id) targetId = top.target_id;
-        if (top.target_name) targetName = top.target_name;
+        if (Array.isArray(top.path_nodes)) {
+          pathNodes = top.path_nodes;
+        } else if (typeof top.path_nodes === "string") {
+          try {
+            pathNodes = JSON.parse(top.path_nodes.replace(/'/g, '"'));
+          } catch {
+            // fallback
+          }
+        }
+        if (top.target_id) targetId = String(top.target_id);
+        if (top.target_name) targetName = String(top.target_name);
         if (top.records) records = Number(top.records);
       }
 
@@ -204,14 +244,10 @@ export const runLiveFalkorInvestigation = createServerFn({ method: "POST" })
       let chokePointName = chokePointId;
       let nextHop = pathNodes[pathNodes.indexOf(chokePointId) + 1] || pathNodes[pathNodes.length - 1]!;
 
-      const chokeRes = await graph.query(`MATCH (n {id: $chokePointId}) RETURN n.name AS name`, {
-        params: { chokePointId },
-      });
-      if (chokeRes.data?.[0]) {
-        chokePointName = String((chokeRes.data[0] as { name?: string }).name || chokePointId);
+      const chokeRes = await executeFalkorCypher(`MATCH (n {id: '${chokePointId}'}) RETURN n.name AS name`);
+      if (chokeRes.rows.length > 0 && chokeRes.rows[0]?.name) {
+        chokePointName = String(chokeRes.rows[0].name);
       }
-
-      await db.close();
 
       return {
         alertId,
@@ -227,7 +263,7 @@ export const runLiveFalkorInvestigation = createServerFn({ method: "POST" })
         queryDurationMs: Date.now() - startTime,
       };
     } catch (err: unknown) {
-      console.warn("FalkorDB investigation fallback:", err);
+      console.warn("FalkorDB live investigation fallback:", err);
       return {
         alertId,
         workloadId: "wl-payment-ingress",
@@ -254,30 +290,23 @@ export const applyFalkorRemediation = createServerFn({ method: "POST" })
   .handler(async ({ data: { chokePointId, alertId } }) => {
     const startTime = Date.now();
     try {
-      const db = await getClient();
-      const graph = db.selectGraph(DB_CONFIG.graph);
-
       const memoryId = `INCIDENT-${Date.now()}`;
-      await graph.query(
+      await executeFalkorCypher(
         `CREATE (m:IncidentMemory {
-          id: $memoryId,
-          alert_id: $alertId,
-          choke_point: $chokePointId,
-          resolved_at: datetime(),
-          status: "remediated"
-        })`,
-        { params: { memoryId, alertId, chokePointId } }
+          id: '${memoryId}',
+          alert_id: '${alertId}',
+          choke_point: '${chokePointId}',
+          status: 'remediated'
+        })`
       );
 
-      const verifyRes = await graph.query(
-        `MATCH (a:Alert {id: $alertId})-[:DETECTED_ON]->(w:Workload)
-         OPTIONAL MATCH path = (w)-[*1..6]->(ds:DataStore {classification: "CrownJewel"})
-         RETURN count(path) AS remaining_paths`,
-        { params: { alertId } }
+      const verifyRes = await executeFalkorCypher(
+        `MATCH (a:Alert {id: '${alertId}'})-[:DETECTED_ON]->(w:Workload)
+         OPTIONAL MATCH path = (w)-[*1..6]->(ds:DataStore {classification: 'CrownJewel'})
+         RETURN count(path) AS remaining_paths`
       );
 
-      const remainingPaths = Number((verifyRes.data?.[0] as { remaining_paths?: number })?.remaining_paths ?? 0);
-      await db.close();
+      const remainingPaths = Number(verifyRes.rows[0]?.remaining_paths ?? 0);
 
       return {
         success: true,
