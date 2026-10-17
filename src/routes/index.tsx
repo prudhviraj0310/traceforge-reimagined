@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  BookOpen,
   Check,
   ChevronDown,
   Database,
@@ -10,10 +11,12 @@ import {
   Plus,
   RotateCcw,
   ShieldCheck,
+  Sparkles,
   Terminal,
   X,
 } from "lucide-react";
 import { GraphView } from "@/components/tf/GraphView";
+import { DemoWalkthrough, WalkthroughStoryboardModal } from "@/components/tf/DemoWalkthrough";
 import {
   NODES,
   blastRadius,
@@ -97,6 +100,11 @@ function Index() {
   const [view, setView] = useState<"graph" | "matrix">("graph");
   const [memory, setMemory] = useState<PastIncident[]>([]);
   const timers = useRef<number[]>([]);
+
+  // Demo Walkthrough & Storyboard state
+  const [walkthroughActive, setWalkthroughActive] = useState(false);
+  const [walkthroughStep, setWalkthroughStep] = useState(0);
+  const [storyboardOpen, setStoryboardOpen] = useState(false);
 
   // FalkorDB Cloud state
   const [falkorStatus, setFalkorStatus] = useState<FalkorStatus | null>(null);
@@ -249,7 +257,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-10">
+      <header id="tf-tour-header" className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5 lg:px-10">
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-full bg-foreground text-primary-foreground shadow-sm">
             <span className="font-serif text-lg font-bold">T</span>
@@ -261,6 +269,29 @@ function Index() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Demo Walkthrough Primary CTA */}
+          <button
+            onClick={() => {
+              setWalkthroughActive(true);
+              setWalkthroughStep(0);
+            }}
+            className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm transition hover:opacity-90"
+            title="Start interactive 6-step demo walkthrough for judges & presenters"
+          >
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            <span>Demo Walkthrough</span>
+          </button>
+
+          {/* Storyboard Guide */}
+          <button
+            onClick={() => setStoryboardOpen(true)}
+            className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition hover:bg-secondary md:inline-flex"
+            title="View 3-Act demo script and FalkorDB benchmark comparison"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            <span>Storyboard</span>
+          </button>
+
           {/* Live FalkorDB Cloud Status Badge */}
           <button
             onClick={() => {
@@ -313,6 +344,17 @@ function Index() {
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => {
+                setWalkthroughActive(true);
+                setWalkthroughStep(0);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-5 py-3.5 text-sm font-semibold text-accent transition hover:bg-accent hover:text-accent-foreground"
+              title="Interactive stage walkthrough for judges"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Guided Tour</span>
+            </button>
+            <button
               onClick={reset}
               aria-label="Reset"
               className="grid h-12 w-12 place-items-center rounded-full bg-secondary transition hover:bg-border"
@@ -332,7 +374,7 @@ function Index() {
 
         <div className="grid items-start gap-5 xl:grid-cols-[300px_1fr_360px]">
           {/* Alerts */}
-          <Card label="Alerts">
+          <Card id="tf-tour-alerts" label="Alerts">
             <div className="space-y-2.5">
               {ALERTS.map((a) => {
                 const on = a.id === alertId;
@@ -395,7 +437,7 @@ function Index() {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div id="tf-tour-memory" className="mt-6">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm text-muted-foreground">Graph memory</h3>
                 {memory.length > 0 && (
@@ -432,6 +474,7 @@ function Index() {
 
           {/* Graph */}
           <Card
+            id="tf-tour-graph"
             label="Attack graph"
             right={
               <div className="flex rounded-full border border-foreground p-1">
@@ -490,7 +533,7 @@ function Index() {
               <Matrix path={inv.path} choke={inv.choke} />
             )}
 
-            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div id="tf-tour-metrics" className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
               <Stat k="Hops" v={done ? String(inv.path.length - 1) : "—"} />
               <Stat k="Reachable nodes" v={done ? String(br.reachable) : "—"} />
               <Stat k="Crown jewels" v={done ? String(br.crownJewels) : "—"} />
@@ -500,6 +543,7 @@ function Index() {
 
           {/* Feed */}
           <Card
+            id="tf-tour-reasoning"
             label="Reasoning feed"
             right={<span className="text-xs text-muted-foreground">{events.length} steps</span>}
           >
@@ -547,7 +591,7 @@ function Index() {
               </ol>
             )}
             {done && (
-              <div className="rise-in mt-5 rounded-2xl border border-foreground p-4">
+              <div id="tf-tour-chokepoint" className="rise-in mt-5 rounded-2xl border border-foreground p-4">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary">
                     <ShieldCheck className="h-5 w-5" />
@@ -611,7 +655,15 @@ function Index() {
               </button>
             </div>
 
-            {modal === "guide" && <Guide />}
+            {modal === "guide" && (
+              <Guide
+                onStartWalkthrough={() => {
+                  setModal(null);
+                  setWalkthroughActive(true);
+                  setWalkthroughStep(0);
+                }}
+              />
+            )}
 
             {modal === "remediate" && (
               <div className="mt-5 space-y-3">
@@ -775,6 +827,45 @@ function Index() {
           </div>
         </div>
       )}
+
+      {/* Interactive Demo Walkthrough Dock */}
+      <DemoWalkthrough
+        active={walkthroughActive}
+        onClose={() => setWalkthroughActive(false)}
+        currentStep={walkthroughStep}
+        onStepChange={setWalkthroughStep}
+        onRunInvestigation={() => {
+          run();
+          timers.current.push(
+            window.setTimeout(() => {
+              setWalkthroughStep(2);
+            }, 700 * (inv.events.length + 1))
+          );
+        }}
+        onApplyCut={() => {
+          applyCut();
+          setWalkthroughStep(4);
+        }}
+        onOpenConsole={() => {
+          setModal("console");
+          runCypherConsole();
+        }}
+        onOpenStoryboard={() => setStoryboardOpen(true)}
+        isInvestigating={running}
+        isDone={done}
+        isSevered={severed}
+        falkorLatency={falkorStatus ? falkorStatus.latencyMs : "0.3"}
+      />
+
+      {/* Storyboard & Judge Presentation Guide Modal */}
+      <WalkthroughStoryboardModal
+        open={storyboardOpen}
+        onClose={() => setStoryboardOpen(false)}
+        onStartTour={() => {
+          setWalkthroughActive(true);
+          setWalkthroughStep(0);
+        }}
+      />
     </div>
   );
 }
@@ -783,13 +874,17 @@ function Card({
   label,
   right,
   children,
+  id,
+  className,
 }: {
   label: string;
   right?: React.ReactNode;
   children: React.ReactNode;
+  id?: string;
+  className?: string;
 }) {
   return (
-    <section className="rounded-[1.75rem] bg-card p-6 shadow-soft">
+    <section id={id} className={cn("rounded-[1.75rem] bg-card p-6 shadow-soft", className)}>
       <div className="mb-5 flex min-h-8 items-center justify-between">
         <h2 className="text-sm text-muted-foreground">{label}</h2>
         {right}
@@ -896,10 +991,28 @@ const FAQ = [
     "Remediated incidents and attack paths are persisted to :IncidentMemory graph nodes in FalkorDB, allowing future investigations to recall past actions instantly.",
   ],
 ];
-function Guide() {
+function Guide({ onStartWalkthrough }: { onStartWalkthrough?: () => void }) {
   const [open, setOpen] = useState(0);
   return (
     <div className="mt-5 space-y-2.5">
+      {onStartWalkthrough && (
+        <div className="mb-4 flex flex-col gap-2 rounded-2xl bg-secondary p-4 text-xs">
+          <div className="flex items-center gap-1.5 font-bold text-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <span>Interactive Demo Walkthrough</span>
+          </div>
+          <p className="text-muted-foreground">
+            Step through all 6 phases: alert ingestion, GraphBLAS multi-hop traversal, crown jewel blast radius, choke point centrality cut, and lifelong Graph Memory.
+          </p>
+          <button
+            onClick={onStartWalkthrough}
+            className="mt-1 inline-flex items-center gap-1.5 self-start rounded-full bg-foreground px-4 py-2 font-semibold text-primary-foreground shadow transition hover:opacity-90"
+          >
+            <span>Launch 6-Step Tour</span>
+            <ArrowRight className="h-3 w-3" />
+          </button>
+        </div>
+      )}
       {FAQ.map(([q, a], i) => (
         <div key={q} className="rounded-2xl bg-muted px-5 py-4">
           <button
