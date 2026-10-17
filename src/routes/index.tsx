@@ -28,7 +28,7 @@ const SEV: Record<string, string> = {
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 function Index() {
-  const [alertId, setAlertId] = useState(ALERTS[0].id);
+  const [alertId, setAlertId] = useState(ALERTS[0]!.id);
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [revealed, setRevealed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -63,7 +63,7 @@ function Index() {
   };
 
   const sel = selected ? nodeById(selected) : null;
-  const target = nodeById(inv.path[inv.path.length - 1])!;
+  const target = nodeById(inv.path[inv.path.length - 1]!)!;
   const chokeNode = nodeById(inv.choke)!;
 
   return (

@@ -90,7 +90,7 @@ export function findAttackPath(workloadId: string): string[] {
     .sort((a, b) => Number(b.props["crown_jewel"] ?? 0) - Number(a.props["crown_jewel"] ?? 0) || Number(b.props["records"]) - Number(a.props["records"]));
   if (!jewels.length) return [workloadId];
   const path: string[] = [];
-  let cur: string | null = jewels[0].id;
+  let cur: string | null = jewels[0]!.id;
   while (cur) {
     path.unshift(cur);
     cur = prev.get(cur) ?? null;
@@ -129,7 +129,7 @@ export function buildInvestigation(alertId: string): { events: FeedEvent[]; path
   const path = findAttackPath(wl);
   const br = blastRadius(wl);
   const choke = path.find((id) => nodeById(id)?.type === "Policy") ?? path[1] ?? wl;
-  const target = nodeById(path[path.length - 1])!;
+  const target = nodeById(path[path.length - 1]!)!;
   const fmt = (n: number) => n.toLocaleString("en-US");
   return {
     path,
