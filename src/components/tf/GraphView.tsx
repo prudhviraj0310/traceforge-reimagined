@@ -104,7 +104,7 @@ function Node({ n, p, hot, dim, isChoke, severed, selected, onSelect }: {
       />
       {hot && <circle r={4} className="fill-accent" />}
       {jewel && !hot && <circle r={3.5} className="fill-gold" />}
-      <text y={hot ? 32 : 28} textAnchor="middle" className={cn("text-[13px]", hot ? "fill-foreground font-semibold" : "fill-muted-foreground")}>
+      <text y={hot ? 32 : 28} textAnchor="middle" className={cn("text-[10.5px]", hot ? "fill-foreground font-semibold" : "fill-muted-foreground")}>
         {n.name}
       </text>
     </g>
