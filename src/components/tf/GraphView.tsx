@@ -28,7 +28,8 @@ interface Props {
 
 export function GraphView({ path, revealed, choke, severed, selected, onSelect }: Props) {
 
-  const visible = path.slice(0, revealed);
+  const ci = choke ? path.indexOf(choke) : -1;
+  const visible = severed && ci >= 0 ? path.slice(0, Math.min(revealed, ci + 1)) : path.slice(0, revealed);
   const onPath = (id: string) => visible.includes(id);
   const edgeOnPath = (s: string, t: string) => {
     const i = visible.indexOf(s);
