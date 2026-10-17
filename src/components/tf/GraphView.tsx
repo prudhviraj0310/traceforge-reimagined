@@ -2,9 +2,9 @@ import { useMemo } from "react";
 import { COLUMNS, EDGES, NODES, TYPE_LABEL, type GNode } from "@/lib/traceforge-data";
 import { cn } from "@/lib/utils";
 
-const W = 1120;
+const W = 900;
 const H = 520;
-const PAD_X = 80;
+const PAD_X = 60;
 const TOP = 70;
 
 interface Props {
@@ -41,7 +41,7 @@ export function GraphView({ path, revealed, choke, severed, selected, onSelect }
       {COLUMNS.map((t, ci) => {
         const x = PAD_X + (ci * (W - PAD_X * 2)) / (COLUMNS.length - 1);
         return (
-          <text key={t} x={x} y={28} textAnchor="middle" className="fill-muted-foreground text-[12px] font-medium uppercase tracking-[0.14em]">
+          <text key={t} x={x} y={28} textAnchor="middle" className="fill-muted-foreground text-[11px] font-semibold uppercase tracking-[0.14em]">
             {TYPE_LABEL[t]}
           </text>
         );
@@ -104,7 +104,7 @@ function Node({ n, p, hot, dim, isChoke, severed, selected, onSelect }: {
       />
       {hot && <circle r={4} className="fill-accent" />}
       {jewel && !hot && <circle r={3.5} className="fill-gold" />}
-      <text y={hot ? 32 : 28} textAnchor="middle" className={cn("text-[11.5px]", hot ? "fill-foreground font-semibold" : "fill-muted-foreground")}>
+      <text y={hot ? 32 : 28} textAnchor="middle" className={cn("text-[13px]", hot ? "fill-foreground font-semibold" : "fill-muted-foreground")}>
         {n.name}
       </text>
     </g>

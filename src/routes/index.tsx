@@ -149,7 +149,7 @@ function Index() {
           >
             {view === "graph" ? (
               <div className="relative">
-                <div className="aspect-[1120/520] w-full overflow-hidden rounded-2xl bg-muted">
+                <div className="aspect-[900/520] w-full overflow-hidden rounded-2xl bg-muted">
                   <GraphView path={inv.path} revealed={revealed} choke={inv.choke} severed={severed} selected={selected} onSelect={setSelected} />
                 </div>
                 {sel && (
