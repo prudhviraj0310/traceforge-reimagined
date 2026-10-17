@@ -41,7 +41,7 @@ function Index() {
 
   const inv = buildInvestigation(alertId);
   const wl = inv.path[0];
-  const br = blastRadius(wl);
+  const br = blastRadius(wl!);
 
   const reset = () => {
     timers.current.forEach(clearTimeout);
