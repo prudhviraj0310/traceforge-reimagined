@@ -225,7 +225,7 @@ function Index() {
           </Card>
 
           {/* Feed */}
-          <Card label="Reasoning feed" right={<span className="text-xs text-muted-foreground">{events.length}/{inv.events.length}</span>}>
+          <Card label="Reasoning feed" right={<span className="text-xs text-muted-foreground">{events.length} steps</span>}>
             {events.length === 0 && !running ? (
               <div className="flex h-[380px] flex-col items-center justify-center rounded-2xl bg-muted text-center">
                 <div className="h-10 w-10 rounded-full border-2 border-secondary" />
