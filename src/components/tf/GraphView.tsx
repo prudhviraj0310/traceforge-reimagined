@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { COLUMNS, EDGES, NODES, TYPE_LABEL, type GNode } from "@/lib/traceforge-data";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +5,17 @@ const W = 900;
 const H = 520;
 const PAD_X = 60;
 const TOP = 70;
+
+const pos = (() => {
+  const m = new Map<string, { x: number; y: number }>();
+  COLUMNS.forEach((t, ci) => {
+    const col = NODES.filter((n) => n.type === t);
+    const x = PAD_X + (ci * (W - PAD_X * 2)) / (COLUMNS.length - 1);
+    const gap = (H - TOP - 50) / Math.max(col.length, 1);
+    col.forEach((n, i) => m.set(n.id, { x, y: TOP + gap * (i + 0.5) + 10 }));
+  });
+  return m;
+})();
 
 interface Props {
   path: string[];
@@ -17,16 +27,6 @@ interface Props {
 }
 
 export function GraphView({ path, revealed, choke, severed, selected, onSelect }: Props) {
-  const pos = useMemo(() => {
-    const m = new Map<string, { x: number; y: number }>();
-    COLUMNS.forEach((t, ci) => {
-      const col = NODES.filter((n) => n.type === t);
-      const x = PAD_X + (ci * (W - PAD_X * 2)) / (COLUMNS.length - 1);
-      const gap = (H - TOP - 50) / Math.max(col.length, 1);
-      col.forEach((n, i) => m.set(n.id, { x, y: TOP + gap * (i + 0.5) + 10 }));
-    });
-    return m;
-  }, []);
 
   const visible = path.slice(0, revealed);
   const onPath = (id: string) => visible.includes(id);
