@@ -107,7 +107,7 @@ function Index() {
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[300px_1fr_360px]">
+        <div className="grid items-start gap-5 xl:grid-cols-[300px_1fr_360px]">
           {/* Alerts */}
           <Card label="Alerts">
             <div className="space-y-2.5">
