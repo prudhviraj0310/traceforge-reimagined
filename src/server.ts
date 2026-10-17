@@ -47,6 +47,26 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === "/api/ping" || url.pathname === "/health") {
+        return new Response(
+          JSON.stringify({
+            status: "ok",
+            pong: true,
+            timestamp: new Date().toISOString(),
+            uptime: typeof process !== "undefined" ? Math.floor(process.uptime()) : 0,
+            keepaliveIntervalSec: 40,
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+              "cache-control": "no-store, no-cache, must-revalidate",
+            },
+          }
+        );
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

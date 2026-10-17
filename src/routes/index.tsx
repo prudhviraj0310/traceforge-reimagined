@@ -112,11 +112,27 @@ function Index() {
     }
   }, []);
 
-  // Fetch live FalkorDB Cloud status on mount
+  // Fetch live FalkorDB Cloud status on mount and keepalive ping every 40s (prevents 50s idle shutdown)
   useEffect(() => {
-    getFalkorStatus()
-      .then((st) => setFalkorStatus(st))
-      .catch((err) => console.warn("FalkorDB status ping:", err));
+    const fetchStatus = () => {
+      getFalkorStatus()
+        .then((st) => setFalkorStatus(st))
+        .catch((err) => console.warn("FalkorDB status ping:", err));
+    };
+
+    fetchStatus();
+
+    // 40-second client keepalive heartbeat
+    const keepaliveTimer = setInterval(async () => {
+      try {
+        await fetch("/api/ping");
+        fetchStatus();
+      } catch {
+        /* ignore keepalive network error */
+      }
+    }, 40_000); // exactly 40 seconds
+
+    return () => clearInterval(keepaliveTimer);
   }, []);
 
   const inv = buildInvestigation(alertId, memory);

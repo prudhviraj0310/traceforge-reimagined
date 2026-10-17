@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "NITRO_PRESET=node-server vite build",
+    "build:render": "NITRO_PRESET=node-server vite build",
+    "build:cloudflare": "NITRO_PRESET=cloudflare-module vite build",
+    "start": "node render-start.mjs",
+    "start:bare": "node .output/server/index.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

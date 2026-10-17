@@ -1,0 +1,28 @@
+# Render Blueprint for TRACEFORGE
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: traceforge-reimagined
+    runtime: node
+    plan: free
+    region: singapore # or oregon / frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/ping
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: NITRO_PRESET
+        value: node-server
+      - key: FALKORDB_HOST
+        value: r-6jissuruar.instance-4i2tmzunw.hc-7up0crkyn.ap-south-1.aws.f2e0a955bb84.cloud
+      - key: FALKORDB_PORT
+        value: "53633"
+      - key: FALKORDB_USERNAME
+        value: falkordb
+      - key: FALKORDB_PASSWORD
+        value: prudhvi
+      - key: FALKORDB_GRAPH
+        value: traceforge_threat_intel
