@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, Minus, Play, Plus, RotateCcw, ShieldCheck, X } from "lucide-react";
 import { GraphView } from "@/components/tf/GraphView";
-import { NODES, blastRadius, buildInvestigation, nodeById, type FeedEvent } from "@/lib/traceforge-data";
+import { NODES, blastRadius, buildInvestigation, findAttackPath, nodeById, type FeedEvent, type PastIncident } from "@/lib/traceforge-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -37,11 +37,32 @@ function Index() {
   const [selected, setSelected] = useState<string | null>(null);
   const [modal, setModal] = useState<"remediate" | "guide" | null>(null);
   const [view, setView] = useState<"graph" | "matrix">("graph");
+  const [memory, setMemory] = useState<PastIncident[]>([]);
   const timers = useRef<number[]>([]);
+  useEffect(() => {
+    try { setMemory(JSON.parse(localStorage.getItem("tf-memory") ?? "[]")); } catch { /* ignore */ }
+  }, []);
 
-  const inv = buildInvestigation(alertId);
+  const inv = buildInvestigation(alertId, memory);
   const wl = inv.path[0];
-  const br = blastRadius(wl!);
+  const br = blastRadius(wl!, severed ? inv.cut : null);
+  const pathAfter = findAttackPath(wl!, inv.cut);
+  const vaultCut = pathAfter[pathAfter.length - 1] !== inv.path[inv.path.length - 1];
+
+  const applyCut = () => {
+    setSevered(true);
+    setModal(null);
+    const after = blastRadius(wl!, inv.cut);
+    setEvents((e) => [
+      ...e,
+      { step: "TOOL", title: "traceforge_apply_cut", tool: "apply_cut", description: `Removed edge ${nodeById(inv.choke)!.name} → ${nodeById(inv.cut.split(">")[1]!)!.name} from the graph.` },
+      { step: "OBSERVATION", title: "Re-verify reachability", description: vaultCut ? `No path to ${target.name}. Records at risk: ${fmt(br.sensitiveRecords)} → ${fmt(after.sensitiveRecords)}.` : "A path still exists — escalating." },
+      { step: "MEMORY", title: "traceforge_store_incident", tool: "store_incident", description: "Incident, path and fix written to graph memory for future sessions." },
+    ]);
+    const next = [{ alertId, workload: wl!, choke: inv.choke, at: new Date().toISOString() }, ...memory].slice(0, 8);
+    setMemory(next);
+    localStorage.setItem("tf-memory", JSON.stringify(next));
+  };
 
   const reset = () => {
     timers.current.forEach(clearTimeout);
@@ -132,6 +153,27 @@ function Index() {
                 <p><b className="font-semibold">Seeded scenario.</b> <span className="text-muted-foreground">The figures are demo data modeling a fintech cloud, not a real environment.</span></p>
               </div>
             </div>
+            <div className="mt-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm text-muted-foreground">Graph memory</h3>
+                {memory.length > 0 && <button onClick={() => { setMemory([]); localStorage.removeItem("tf-memory"); }} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium">Clear all</button>}
+              </div>
+              {memory.length === 0 ? (
+                <p className="text-[13px] text-muted-foreground">No past incidents yet. Applied fixes are remembered here and recalled next session.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {memory.map((m, i) => (
+                    <li key={i} className="flex items-center gap-3 rounded-2xl border border-border p-3">
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-gold" />
+                      <div className="min-w-0 text-[12px]">
+                        <div className="truncate font-semibold">{nodeById(m.workload)?.name}</div>
+                        <div className="truncate text-muted-foreground">cut {nodeById(m.choke)?.name}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </Card>
 
           {/* Graph */}
@@ -183,7 +225,7 @@ function Index() {
           </Card>
 
           {/* Feed */}
-          <Card label="Reasoning feed" right={<span className="text-xs text-muted-foreground">{events.length}/{inv.events.length}</span>}>
+          <Card label="Reasoning feed" right={<span className="text-xs text-muted-foreground">{events.length} steps</span>}>
             {events.length === 0 && !running ? (
               <div className="flex h-[380px] flex-col items-center justify-center rounded-2xl bg-muted text-center">
                 <div className="h-10 w-10 rounded-full border-2 border-secondary" />
@@ -194,7 +236,7 @@ function Index() {
                 {events.map((e, i) => (
                   <li key={i} className="rise-in relative pl-9">
                     <span className={cn("absolute left-0 top-1 grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold",
-                      e.step === "DECISION" ? "bg-accent text-accent-foreground" : e.step === "ACTION" ? "bg-foreground text-primary-foreground" : "bg-secondary")}>{i + 1}</span>
+                      e.step === "DECISION" ? "bg-accent text-accent-foreground" : e.step === "ACTION" ? "bg-foreground text-primary-foreground" : e.step === "MEMORY" ? "bg-gold" : "bg-secondary")}>{i + 1}</span>
                     <div className="text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">{e.step === "TOOL" ? "MCP tool" : e.step}</div>
                     <div className={cn("mt-0.5 text-sm font-semibold", e.tool && "font-mono text-[12px]")}>{e.title}</div>
                     <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">{e.description}</p>
@@ -208,7 +250,7 @@ function Index() {
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary"><ShieldCheck className="h-5 w-5" /></div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-serif text-[16px] leading-tight">{severed ? "Containment proposed" : "Choke point found"}</div>
+                    <div className="font-serif text-[16px] leading-tight">{severed ? "Path severed · vault unreachable" : "Choke point found"}</div>
                     <div className="mt-1 inline-block rounded-full bg-secondary px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em]">{chokeNode.name}</div>
                   </div>
                   <button onClick={() => setModal("remediate")} aria-label="Review remediation" className="grid h-9 w-9 place-items-center rounded-full bg-secondary transition hover:bg-foreground hover:text-primary-foreground">
@@ -236,9 +278,9 @@ function Index() {
                     <span className="grid h-4 w-4 place-items-center rounded-full bg-foreground text-primary-foreground"><Check className="h-2.5 w-2.5" /></span>{s}
                   </div>
                 ))}
-                <div className="rounded-2xl bg-secondary p-4 text-[13px]"><b>Simulation only.</b> Nothing changes in a real cloud account — steps are recorded as proposals.</div>
+                <div className="rounded-2xl bg-secondary p-4 text-[13px]"><b>Graph-only action.</b> The edge is removed from the graph and reachability is re-checked. No real cloud account is touched.</div>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => { setSevered(true); setModal(null); }} className="flex-1 rounded-full bg-foreground py-3 text-sm font-medium text-primary-foreground">Record proposal</button>
+                  <button onClick={applyCut} disabled={severed} className="flex-1 rounded-full bg-foreground py-3 text-sm font-medium text-primary-foreground disabled:opacity-50">{severed ? "Applied" : "Apply cut & re-verify"}</button>
                   <button onClick={() => setModal(null)} className="flex-1 rounded-full bg-secondary py-3 text-sm font-medium">Cancel</button>
                 </div>
               </div>

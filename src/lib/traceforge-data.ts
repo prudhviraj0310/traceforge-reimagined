@@ -72,12 +72,15 @@ export const EDGES: GEdge[] = [
 export const nodeById = (id: string) => NODES.find((n) => n.id === id);
 
 /** BFS from a workload to the reachable crown-jewel datastore with the most records. */
-export function findAttackPath(workloadId: string): string[] {
+export type Cut = string | null; // "source>target" edge removed by remediation
+const out = (cur: string, cut: Cut) => EDGES.filter((e) => e.source === cur && `${e.source}>${e.target}` !== cut);
+
+export function findAttackPath(workloadId: string, cut: Cut = null): string[] {
   const prev = new Map<string, string | null>([[workloadId, null]]);
   const queue = [workloadId];
   while (queue.length) {
     const cur = queue.shift()!;
-    for (const e of EDGES.filter((e) => e.source === cur)) {
+    for (const e of out(cur, cut)) {
       if (!prev.has(e.target)) {
         prev.set(e.target, cur);
         queue.push(e.target);
@@ -98,12 +101,12 @@ export function findAttackPath(workloadId: string): string[] {
   return path;
 }
 
-export function blastRadius(workloadId: string) {
+export function blastRadius(workloadId: string, cut: Cut = null) {
   const seen = new Set<string>([workloadId]);
   const queue = [workloadId];
   while (queue.length) {
     const cur = queue.shift()!;
-    for (const e of EDGES.filter((e) => e.source === cur)) if (!seen.has(e.target)) { seen.add(e.target); queue.push(e.target); }
+    for (const e of out(cur, cut)) if (!seen.has(e.target)) { seen.add(e.target); queue.push(e.target); }
   }
   const stores = [...seen].map(nodeById).filter((n): n is GNode => !!n && n.type === "Datastore");
   return {
@@ -116,14 +119,16 @@ export function blastRadius(workloadId: string) {
 }
 
 export interface FeedEvent {
-  step: "PLAN" | "TOOL" | "OBSERVATION" | "DECISION" | "ACTION";
+  step: "PLAN" | "TOOL" | "OBSERVATION" | "DECISION" | "ACTION" | "MEMORY";
   title: string;
   description: string;
   tool?: string;
   reveal?: number; // how many path hops become visible
 }
 
-export function buildInvestigation(alertId: string): { events: FeedEvent[]; path: string[]; choke: string } {
+export interface PastIncident { alertId: string; workload: string; choke: string; at: string }
+
+export function buildInvestigation(alertId: string, memory: PastIncident[] = []): { events: FeedEvent[]; path: string[]; choke: string; cut: string } {
   const alertEdge = EDGES.find((e) => e.source === alertId)!;
   const wl = alertEdge.target;
   const path = findAttackPath(wl);
@@ -131,10 +136,17 @@ export function buildInvestigation(alertId: string): { events: FeedEvent[]; path
   const choke = path.find((id) => nodeById(id)?.type === "Policy") ?? path[1] ?? wl;
   const target = nodeById(path[path.length - 1]!)!;
   const fmt = (n: number) => n.toLocaleString("en-US");
+  const ci = path.indexOf(choke);
+  const cut = `${choke}>${path[ci + 1] ?? ""}`;
+  const prior = memory.filter((m) => m.workload === wl);
   return {
     path,
     choke,
+    cut,
     events: [
+      ...(prior.length
+        ? [{ step: "MEMORY" as const, title: "traceforge_recall_incidents", tool: "recall_incidents", description: `${prior.length} prior incident(s) on ${nodeById(wl)!.name}. Last fix: sever ${nodeById(prior[0]!.choke)?.name}. Prioritising that path.` }]
+        : []),
       { step: "PLAN", title: "Validate alert origin", description: `Confirm ${alertId} maps to a live workload before traversing.` },
       { step: "TOOL", title: "traceforge_validate_alert", tool: "validate_alert", description: `Alert anchored to ${nodeById(wl)!.name} via DETECTED_ON.`, reveal: 1 },
       { step: "TOOL", title: "traceforge_find_attack_paths", tool: "find_attack_paths", description: `Multi-hop traversal from ${nodeById(wl)!.name} across AUTHENTICATES_AS → CAN_ASSUME → HAS_POLICY → PERMITS_ACCESS.`, reveal: Math.ceil(path.length / 2) },
@@ -142,7 +154,7 @@ export function buildInvestigation(alertId: string): { events: FeedEvent[]; path
       { step: "TOOL", title: "traceforge_calculate_blast_radius", tool: "calculate_blast_radius", description: `${br.reachable} reachable nodes, ${br.crownJewels} crown jewel(s), ${fmt(br.sensitiveRecords)} sensitive records exposed.` },
       { step: "TOOL", title: "traceforge_identify_optimal_choke_point", tool: "identify_optimal_choke_point", description: "Brandes betweenness centrality across the compromised subgraph." },
       { step: "DECISION", title: `Sever ${nodeById(choke)!.name}`, description: `Smallest intervention that disconnects ${target.name} with least collateral to running services.` },
-      { step: "ACTION", title: "Proposal recorded — simulation", description: "Containment and hardening steps are drafted, not executed. Live integrations fail closed." },
+      { step: "ACTION", title: "Remediation ready", description: "Apply the cut to the graph, then re-verify reachability. Live cloud integrations stay off." },
     ],
   };
 }
