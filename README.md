@@ -1,64 +1,58 @@
-# ⚡ TRACEFORGE — Graph-Native Autonomous Incident Response
+# TRACEFORGE
 
 <p align="center">
-  <img src="https://img.shields.io/badge/FalkorDB-GraphBLAS%20v6.8-red?style=for-the-badge&logo=redis&logoColor=white" alt="FalkorDB" />
-  <img src="https://img.shields.io/badge/Live%20Cluster-AWS%20ap--south--1-orange?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS Cloud" />
-  <img src="https://img.shields.io/badge/Deployment-Render%20Live-brightgreen?style=for-the-badge&logo=render&logoColor=white" alt="Render" />
-  <img src="https://img.shields.io/badge/Hackathon-WeMakeDevs%20Graph%20Hacks-blueviolet?style=for-the-badge" alt="WeMakeDevs" />
+  <img src="https://img.shields.io/badge/FalkorDB-GraphBLAS%20v6.8-red?style=flat-square&logo=redis&logoColor=white" alt="FalkorDB" />
+  <img src="https://img.shields.io/badge/Graph-OpenCypher-blue?style=flat-square" alt="OpenCypher" />
+  <img src="https://img.shields.io/badge/TypeScript-React%2019-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Python-FastAPI%20%2F%20MCP-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Live%20Demo-Render-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Render" />
+  <img src="https://img.shields.io/badge/License-MIT-gray?style=flat-square" alt="License" />
 </p>
 
 <p align="center">
-  <b>Autonomous AI Threat Intelligence & Incident Response Agent powered by FalkorDB as its connected data sensory cortex.</b><br />
-  <i>Transforms cloud infrastructure and security alerts into real-time sub-millisecond OpenCypher traversals, surgical cut-vertex remediation, and lifelong Graph Memory.</i>
+  <strong>Autonomous, graph-native incident response and blast radius investigation engine powered by FalkorDB.</strong>
 </p>
 
 <p align="center">
-  <a href="https://traceforge-reimagined.onrender.com">🌐 <b>Live Web Application</b></a> •
-  <a href="#-architecture">🏗️ <b>Architecture</b></a> •
-  <a href="#-the-security-blind-spot">🚨 <b>The Problem</b></a> •
-  <a href="#-falkordb-graph-model">📊 <b>Graph Schema</b></a> •
-  <a href="#-opencypher-queries">⚡ <b>OpenCypher</b></a> •
-  <a href="#-benchmarks">📈 <b>Benchmarks</b></a>
+  <a href="https://traceforge-reimagined.onrender.com">Live Application</a> •
+  <a href="#overview">Overview</a> •
+  <a href="#key-features">Key Features</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#graph-data-model">Graph Model</a> •
+  <a href="#opencypher-queries">Cypher Queries</a> •
+  <a href="#getting-started">Getting Started</a>
 </p>
 
 ---
 
-## 🚀 Live Links
+## Overview
 
-- **Live Application:** [traceforge-reimagined.onrender.com](https://traceforge-reimagined.onrender.com)
-- **FalkorDB Cloud Cluster:** AWS `ap-south-1` (Mumbai) — `r-6jissuruar.instance-4i2tmzunw.hc-7up0crkyn.ap-south-1.aws.f2e0a955bb84.cloud:53633`
-- **Graph Name:** `traceforge_threat_intel` (21 Nodes, 19 Relationships)
-- **Built For:** WeMakeDevs Graph Hacks — Track 01: *Agents That Act on Connected Data* & *Agent Memory and Coordination*
+Modern cloud environments are deeply connected permission graphs. When a container exploit alert triggers on an ingress workload, security engineers must answer a critical question:
 
----
+> *"What sensitive datastores can this compromised workload actually reach across our transitive IAM roles, assume policies, and encryption keys?"*
 
-## 🚨 The Security Blind Spot
+Traditional SIEMs and LLM copilots fail because they analyze flat text logs or query vector databases. They cannot evaluate non-linear transitive reachability. Meanwhile, naive automated responses terminate the container, causing production outages.
 
-When a runtime security alert (`ALERT-2026-9812`) fires on an internet-facing Kubernetes pod (`payment-ingress-api`), modern SecOps teams face two critical failures:
-
-1. **Vector RAG & Flat Logs are Graph-Blind:** Traditional SIEMs and LLM copilots treat alerts as isolated text logs. They calculate semantic similarity, not topological reachability. They cannot answer:
-   > *"What sensitive assets can this compromised workload reach across our transitive IAM roles, assume policies, and encryption keys?"*
-2. **Naive Automated Response Destroys Production:** Automated scripts typically kill the container or revoke all credentials. In a production fintech or ecommerce environment, pulling the plug takes down checkout for millions of legitimate paying customers.
-
-Cloud environments are not flat documents. **Cloud environments are graphs.**
+**TRACEFORGE** solves this by using **FalkorDB** as an autonomous connected data cortex. It maps workloads, identities, roles, policies, KMS keys, and crown jewel datastores into an in-memory property graph. When an alert fires, the agent traverses multi-hop attack paths in sub-millisecond time using GraphBLAS linear algebra, determines the minimal cut-vertex (choke point), severs the risk with zero application downtime, and persists the resolution to Graph Memory for lifelong recall.
 
 ---
 
-## 💡 The Solution: TRACEFORGE
+## Key Features
 
-TRACEFORGE uses **FalkorDB** as its real-time graph reasoning engine:
-- **Sub-Millisecond Multi-Hop Traversal (GraphBLAS):** Evaluates 6-hop attack paths from container pods to sensitive crown jewels in **0.3ms** using sparse matrix linear algebra.
-- **Surgical Choke-Point Detection (Cut Vertex Centrality):** Instead of shutting down the pod, TRACEFORGE identifies the single optimal permission edge (`Policy-LegacyPayments-Overprivileged -> KMSKey`) whose removal eliminates 100% of attack paths while keeping production services running.
-- **Persistent Graph Memory (`:IncidentMemory`):** Writes incident findings, remediation history, and graph cuts back into FalkorDB as native graph nodes for lifelong cross-session agent recall.
-- **Interactive OpenCypher Console & 6-Phase Guided Walkthrough:** Direct execution of ad-hoc OpenCypher queries against FalkorDB Cloud with real-time GraphBLAS latency reporting.
+- **Sub-Millisecond Multi-Hop Traversal**: Computes 6-hop transitive reachability in under 1ms using FalkorDB's GraphBLAS sparse matrix linear algebra engine.
+- **Surgical Choke-Point Detection**: Uses graph cut-vertex algorithms to identify the exact intermediary permission edge to sever, preserving benign operational traffic.
+- **Persistent Graph Memory (`:IncidentMemory`)**: Commits incident history, identified choke points, and verification states directly into FalkorDB for cross-session agent recall.
+- **Live OpenCypher Query Console**: Run arbitrary Cypher queries directly against the live FalkorDB Cloud cluster with real-time GraphBLAS execution metrics.
+- **Interactive Topology Visualizer**: Dynamic node-link canvas displaying real-time workload isolation, path illumination, and blast radius statistics.
+- **Automated Verification**: Runs post-remediation Cypher queries to mathematically confirm zero remaining paths to sensitive data assets.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
                           ┌─────────────────────────────┐
-                          │    Runtime Security Alert   │
+                          │   Runtime Security Alert    │
                           │      (ALERT-2026-9812)      │
                           └──────────────┬──────────────┘
                                          │
@@ -68,8 +62,8 @@ TRACEFORGE uses **FalkorDB** as its real-time graph reasoning engine:
                  │   (Decision Engine, BFS Traversal, Memory)    │
                  └───────┬───────────────────────────────▲───────┘
                          │                               │
-       OpenCypher via    │ Redis RESP Protocol           │ Sub-ms Results
-       GRAPH.QUERY       │ (0.3ms Latency)               │ & Graph State
+       OpenCypher via    │ Redis RESP Protocol           │ Query Results
+       GRAPH.QUERY       │ (Sub-millisecond latency)     │ & Graph State
                          ▼                               │
                  ┌───────────────────────────────────────┴───────┐
                  │         FalkorDB Cloud Engine                 │
@@ -77,7 +71,7 @@ TRACEFORGE uses **FalkorDB** as its real-time graph reasoning engine:
                  │                                               │
                  │  • GraphBLAS Linear Algebra Adjacency Matrix  │
                  │  • 21 Graph Nodes / 19 Relationships          │
-                 │  • Graph Centrality & Cut-Vertex Algorithms   │
+                 │  • Cut-Vertex Centrality Scoring              │
                  │  • Native (:IncidentMemory) Persistent Store  │
                  └───────┬───────────────────────────────────────┘
                          │
@@ -92,23 +86,23 @@ TRACEFORGE uses **FalkorDB** as its real-time graph reasoning engine:
 
 ---
 
-## 📊 FalkorDB Graph Model
+## Graph Data Model
 
 The enterprise cloud topology is modeled as a multi-layered property graph in FalkorDB:
 
 ### Node Types
 | Node Label | Key Properties | Purpose |
 | :--- | :--- | :--- |
-| `:Alert` | `id, name, severity, detector` | Security incident entry point |
-| `:Workload` | `id, name, tier, internet_exposed` | Compute workloads (Kubernetes Pods, APIs) |
+| `:Alert` | `id, name, severity, detector` | Security alert trigger |
+| `:Workload` | `id, name, tier, internet_exposed` | Compute services (Kubernetes pods, APIs) |
 | `:Identity` | `id, name, service_account` | Cloud identities & ServiceAccounts |
 | `:Role` | `id, name, assume_role` | Cloud IAM Roles assumable by identities |
-| `:Policy` | `id, name, type, action` | IAM policies granting cryptographic actions |
+| `:Policy` | `id, name, type, action` | IAM policies granting cryptographic access |
 | `:KMSKey` | `id, name, region` | Encryption keys protecting sensitive datastores |
-| `:DataStore` | `id, name, classification, records`| Target storage assets (**Crown Jewels**) |
-| `:IncidentMemory`| `id, alert_id, choke_point, status` | Persistent agent memory of past remediations |
+| `:DataStore` | `id, name, classification, records` | Target storage assets (**Crown Jewels**) |
+| `:IncidentMemory` | `id, alert_id, choke_point, status` | Persistent agent memory of remediations |
 
-### Core Graph Path
+### Graph Relationship Path
 ```
 (:Alert)-[:DETECTED_ON]->(:Workload)
        -[:AUTHENTICATES_AS]->(:Identity)
@@ -120,7 +114,7 @@ The enterprise cloud topology is modeled as a multi-layered property graph in Fa
 
 ---
 
-## ⚡ OpenCypher Queries Executed Live
+## OpenCypher Queries
 
 ### 1. Multi-Hop Transitive Attack Path Search
 ```cypher
@@ -130,7 +124,6 @@ RETURN [n in nodes(path) | n.id] AS attack_path,
        ds.records_count AS records_at_risk
 LIMIT 1;
 ```
-*Result:* Discovers 5-hop path to `fintech-pci-cardholder-vault` holding **4,500,000 credit card records**.
 
 ### 2. Surgical Choke-Point Severing
 ```cypher
@@ -138,15 +131,14 @@ MATCH (p:Policy {id: 'pol-legacy-payments'})-[r:GRANTS_DECRYPT]->(k:KMSKey)
 DELETE r;
 ```
 
-### 3. Mathematical Zero-Reachability Verification
+### 3. Reachability Verification
 ```cypher
 MATCH (w:Workload {id: 'wl-payment-ingress'})
 OPTIONAL MATCH path = (w)-[*1..6]->(ds:DataStore {classification: 'CrownJewel'})
 RETURN count(path) AS remaining_paths;
 ```
-*Result:* Returns `0` remaining paths. Records at risk drop from **4,500,000 → 0**.
 
-### 4. Lifelong Graph Memory Persistence
+### 4. Graph Memory Persistence
 ```cypher
 CREATE (m:IncidentMemory {
   id: 'INCIDENT-2026-9812',
@@ -159,29 +151,58 @@ CREATE (m:IncidentMemory {
 
 ---
 
-## 📈 Benchmarks: Why FalkorDB Wins
+## Technology Comparison
 
-| Capability | FalkorDB GraphBLAS | Vector RAG / LLM Embeddings | Relational SQL (Postgres CTE) |
+| Dimension | FalkorDB (GraphBLAS) | Vector RAG | Relational SQL (PostgreSQL) |
 | :--- | :--- | :--- | :--- |
-| **6-Hop Multi-Path BFS** | ⚡ **0.3ms** (Matrix Math) | ❌ **Blind** to transitive hops | ⚠️ **120ms - 450ms** (6 self-joins) |
-| **Correctness Guarantee** | ⚡ **100% Deterministic** | ❌ **Hallucinates** connections | ⚠️ Risk of join timeout / lock thrashing |
-| **Cut-Vertex Centrality** | ⚡ **Native Graph Algorithm** | ❌ Cannot calculate | ⚠️ Requires expensive procedural PL/pgSQL |
-| **Agent Memory Recall** | ⚡ **Native `:IncidentMemory` graph**| ⚠️ Fuzzy semantic match | ⚠️ Flat tables without relationship context |
-| **Connection Protocol** | ⚡ **Redis RESP (Ultra-low latency)**| REST API overhead | Heavy relational pooling (PgBouncer) |
+| **6-Hop Traversal Speed** | **0.3ms** (Sparse Matrix) | Unsupported | 120ms - 450ms (Recursive CTEs) |
+| **Path Accuracy** | 100% Deterministic | Approximate / Probabilistic | Deterministic |
+| **Choke-Point Calculation**| Native Graph Centrality | Unsupported | Procedural SQL scripts |
+| **Agent Memory** | Native Graph Nodes (`:IncidentMemory`) | Semantic vector similarity | Flat audit log tables |
+| **Protocol** | Redis RESP Protocol | REST API | PostgreSQL wire protocol |
 
 ---
 
-## 🛠️ Tech Stack
+## Project Structure
 
-- **Graph Engine:** [FalkorDB](https://falkordb.com) Cloud (GraphBLAS Linear Algebra, OpenCypher)
-- **Frontend / Fullstack:** React 19, TanStack Start, TanStack Router, Tailwind CSS, Lucide Icons
-- **Driver:** Direct Redis RESP Client (`import { createClient } from "redis"`) bypassing polyfill conflicts
-- **Server:** Node.js Nitro Server Engine with automated 40-second keepalive loop (prevents idle timeouts)
-- **Deployment:** Render Cloud Web Service (Docker / Linux x86_64)
+```
+.
+├── src/
+│   ├── components/
+│   │   ├── tf/
+│   │   │   ├── GraphView.tsx          # Interactive SVG graph canvas
+│   │   │   └── DemoWalkthrough.tsx    # 6-phase interactive guided tour
+│   │   └── ui/                        # Reusable UI component library
+│   ├── lib/
+│   │   ├── falkor-api.ts              # Direct Redis driver for FalkorDB Cloud
+│   │   └── traceforge-data.ts         # Graph schema, topology, and BFS helpers
+│   ├── routes/
+│   │   ├── __root.tsx                 # Root layout configuration
+│   │   └── index.tsx                  # Mission control dashboard & Cypher console
+│   └── server.ts                      # Nitro server entry & keepalive endpoint
+├── traceforge/
+│   ├── agent/
+│   │   ├── investigator.py            # Python autonomous investigation agent
+│   │   └── prompts.py                 # Structured reasoning prompts
+│   ├── engine/
+│   │   ├── db.py                      # Python FalkorDB connection client
+│   │   ├── schema.py                  # Graph schema definitions
+│   │   └── seed.py                    # Graph seeding script
+│   └── mcp_server/
+│       └── server.py                  # Model Context Protocol (MCP) server
+├── render.yaml                        # Render deployment blueprint
+├── Dockerfile                         # Production container specification
+└── render-start.mjs                   # Process launcher & 40s keepalive daemon
+```
 
 ---
 
-## 💻 Local Development Setup
+## Getting Started
+
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.10+ (for Python agent / MCP server)
+- FalkorDB Cloud account or local Docker instance
 
 ### 1. Clone the Repository
 ```bash
@@ -195,7 +216,7 @@ npm install
 ```
 
 ### 3. Configure Environment Variables
-Create a `.env` file in the root directory:
+Create a `.env` file in the project root:
 ```env
 FALKORDB_HOST=r-6jissuruar.instance-4i2tmzunw.hc-7up0crkyn.ap-south-1.aws.f2e0a955bb84.cloud
 FALKORDB_PORT=53633
@@ -205,7 +226,7 @@ FALKORDB_GRAPH=traceforge_threat_intel
 PORT=3000
 ```
 
-### 4. Run Development Server
+### 4. Run Locally
 ```bash
 npm run dev
 ```
@@ -219,23 +240,6 @@ npm start
 
 ---
 
-## 🎬 Demo Walkthrough Mode
+## License
 
-TRACEFORGE includes a built-in **Interactive Demo Walkthrough** designed for judges and presentations:
-1. Click the **"✨ Demo Walkthrough"** button in the header.
-2. Step through the 6 guided phases with visual spotlighting and live actions:
-   - *Phase 1: Ingestion & Hidden Topology*
-   - *Phase 2: GraphBLAS Multi-Hop Traversal*
-   - *Phase 3: Crown Jewel Exposure (4.5M records)*
-   - *Phase 4: Centrality Choke Point Detection*
-   - *Phase 5: Verified Zero Reachability & Graph Memory*
-   - *Phase 6: Live OpenCypher Query Console*
-3. Or toggle **Auto-Play** for a 9-second automated stage demo!
-
----
-
-## 👥 Authors & Acknowledgments
-
-- **Team:** TRACEFORGE Core Team
-- **Built for:** [WeMakeDevs Graph Hacks](https://wemakedevs.org)
-- **Special Thanks:** The **FalkorDB** team for creating the fastest graph database on Earth.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
